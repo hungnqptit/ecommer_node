@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const keyTokenService = require("./keyToken.service");
 const { createTokenPair } = require("../auth/authUtils");
+const { BadRequestError } = require("../core/error.response");
 
 const RoleShop = {
   SHOP: "SHOP",
@@ -15,73 +16,74 @@ const RoleShop = {
 
 class AccessService {
   static signUp = async ({ name, email, password }) => {
-    try {
-      const holderShop = await shopModel.findOne({ email }).lean();
-      if (holderShop) {
-        return {
-          code: "xxxx",
-          message: "Shop already register!",
-          status: "error",
-        };
-      }
-      const hashedPassword = await bcrypt.hash(password, 10);
+    // try {
+    const holderShop = await shopModel.findOne({ email }).lean();
+    if (holderShop) {
+      throw new BadRequestError("Error: Shop already register!");
+      // return {
+      //   code: "xxxx",
+      //   message: "Shop already register!",
+      //   status: "error",
+      // };
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-      const newShop = await shopModel.create({
-        name,
-        email,
-        password: hashedPassword,
-        roles: [RoleShop.SHOP],
+    const newShop = await shopModel.create({
+      name,
+      email,
+      password: hashedPassword,
+      roles: [RoleShop.SHOP],
+    });
+
+    if (newShop) {
+      // create privateKey, publicKey
+      const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
+        modulusLength: 4096,
+      });
+      console.log({ privateKey, publicKey });
+
+      const publicKeyString = keyTokenService.createKeyToken({
+        userId: newShop._id,
+        publicKey,
       });
 
-      if (newShop) {
-        // create privateKey, publicKey
-        const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
-          modulusLength: 4096,
-        });
-        console.log({ privateKey, publicKey });
-
-        const publicKeyString = keyTokenService.createKeyToken({
-          userId: newShop._id,
-          publicKey,
-        });
-
-        if (!publicKeyString) {
-          return {
-            code: "xxxx",
-            message: "Public key string error",
-          };
-        }
-
-        const tokens = await createTokenPair(
-          {
-            userId: newShop._id,
-            email,
-          },
-
-          publicKey,
-          privateKey
-        );
-        console.log("Create token success::!", tokens);
+      if (!publicKeyString) {
         return {
-          code: "201",
-          metadata: {
-            shop: newShop,
-            tokens,
-          },
+          code: "xxxx",
+          message: "Public key string error",
         };
       }
+
+      const tokens = await createTokenPair(
+        {
+          userId: newShop._id,
+          email,
+        },
+
+        publicKey,
+        privateKey
+      );
+      console.log("Create token success::!", tokens);
       return {
-        code: "200",
-        message: "Create Failed",
-        metadata: null,
-      };
-    } catch (e) {
-      return {
-        code: "xxx",
-        message: e.message,
-        status: "error",
+        code: "201",
+        metadata: {
+          shop: newShop,
+          tokens,
+        },
       };
     }
+    return {
+      code: "200",
+      message: "Create Failed",
+      metadata: null,
+    };
+    // } catch (e) {
+    //   return {
+    //     code: "xxx",
+    //     message: e.message,
+    //     status: "error",
+    //   };
+    // }
   };
 }
 
