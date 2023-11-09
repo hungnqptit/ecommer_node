@@ -59,7 +59,6 @@ class AccessService {
           userId: newShop._id,
           email,
         },
-
         publicKey,
         privateKey
       );
