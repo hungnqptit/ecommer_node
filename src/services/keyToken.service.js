@@ -19,23 +19,19 @@ class KeyTokenService {
       // return token ? publicKeyString : null;
       // level xxx
 
-      try {
-        const filter = { user: userId },
-          update = {
-            publicKey,
-            privateKey,
-            refreshToken,
-            refreshTokenUsed: [],
-          },
-          options = { upsert: true, new: true };
-        const tokens = await keytokenModel.findOneAndUpdate(
-          filter,
-          update,
-          options
-        );
-      } catch (e) {
-        console.log(e);
-      }
+      const filter = { user: userId },
+        update = {
+          publicKey,
+          privateKey,
+          refreshToken,
+          refreshTokenUsed: [],
+        },
+        options = { upsert: true, new: true };
+      const tokens = await keytokenModel.findOneAndUpdate(
+        filter,
+        update,
+        options
+      );
 
       return tokens ? tokens.publicKey : null;
     } catch (e) {
