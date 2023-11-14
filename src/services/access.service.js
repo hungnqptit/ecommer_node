@@ -5,7 +5,10 @@ const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const keyTokenService = require("./keyToken.service");
 const { createTokenPair } = require("../auth/authUtils");
-const { BadRequestError } = require("../core/error.response");
+const { BadRequestError, AuthFailureError } = require("../core/error.response");
+const { findByEmail } = require("./shop.service");
+const { getInfoData } = require("../utils");
+const KeyTokenService = require("./keyToken.service");
 
 const RoleShop = {
   SHOP: "SHOP",
@@ -15,10 +18,48 @@ const RoleShop = {
 };
 
 class AccessService {
+  static login = async ({ email, password, refreshToken = null }) => {
+    const foundShop = await findByEmail({ email });
+
+    if (!foundShop) throw new BadRequestError("Shop not registered");
+
+    const match = await bcrypt.compare(password, foundShop.password);
+    if (!match) throw new AuthFailureError("Authentication Error");
+
+    const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
+      modulusLength: 4096,
+    });
+    const { _id: userId } = foundShop;
+    const tokens = await createTokenPair(
+      {
+        userId,
+        email,
+      },
+      publicKey,
+      privateKey
+    );
+
+    const privateKeyString = privateKey.toString(),
+      publicKeyString = publicKey.toString();
+
+    await KeyTokenService.createKeyToken({
+      refreshToken: tokens.refreshToken,
+      privateKeyString,
+      publicKeyString,
+      userId,
+    });
+
+    return {
+      shop: getInfoData(["_id", "name", "email"], foundShop),
+      tokens,
+    };
+  };
+
   static signUp = async ({ name, email, password }) => {
     // try {
     const holderShop = await shopModel.findOne({ email }).lean();
     if (holderShop) {
+      console.log(holderShop);
       throw new BadRequestError("Error: Shop already register!");
       // return {
       //   code: "xxxx",
@@ -40,14 +81,14 @@ class AccessService {
       const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
         modulusLength: 4096,
       });
-      console.log({ privateKey, publicKey });
+      const publicKeyString = publicKey.toString();
 
-      const publicKeyString = keyTokenService.createKeyToken({
+      const publicKeyToken = keyTokenService.createKeyToken({
         userId: newShop._id,
-        publicKey,
+        publicKeyString,
       });
 
-      if (!publicKeyString) {
+      if (!publicKeyToken) {
         return {
           code: "xxxx",
           message: "Public key string error",
@@ -64,18 +105,11 @@ class AccessService {
       );
       console.log("Create token success::!", tokens);
       return {
-        code: "201",
-        metadata: {
-          shop: newShop,
-          tokens,
-        },
+        shop: getInfoData(["_id", "name", "email"], newShop),
+        tokens,
       };
     }
-    return {
-      code: "200",
-      message: "Create Failed",
-      metadata: null,
-    };
+    return null;
     // } catch (e) {
     //   return {
     //     code: "xxx",
