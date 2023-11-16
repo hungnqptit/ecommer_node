@@ -18,6 +18,12 @@ const RoleShop = {
 };
 
 class AccessService {
+  static logout = async (keyStore) => {
+    const delKey = await KeyTokenService.removeByUserId(keyStore._id);
+    console.log(delKey);
+    return delKey;
+  };
+
   static login = async ({ email, password, refreshToken = null }) => {
     const foundShop = await findByEmail({ email });
 
@@ -26,9 +32,8 @@ class AccessService {
     const match = await bcrypt.compare(password, foundShop.password);
     if (!match) throw new AuthFailureError("Authentication Error");
 
-    const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
-      modulusLength: 4096,
-    });
+    const privateKey = crypto.randomBytes(64);
+    const publicKey = crypto.randomBytes(64);
     const { _id: userId } = foundShop;
     const tokens = await createTokenPair(
       {
@@ -44,8 +49,8 @@ class AccessService {
 
     await KeyTokenService.createKeyToken({
       refreshToken: tokens.refreshToken,
-      privateKeyString,
-      publicKeyString,
+      privateKey: privateKeyString,
+      publicKey: publicKeyString,
       userId,
     });
 
@@ -79,7 +84,7 @@ class AccessService {
     if (newShop) {
       // create privateKey, publicKey
       const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
-        modulusLength: 4096,
+        modulusLength: 2048,
       });
       const publicKeyString = publicKey.toString();
 
