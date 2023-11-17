@@ -34,7 +34,7 @@ var productSchema = new Schema(
   { timestamps: true, collection: COLLECTION_NAME }
 );
 
-const electronicSchema = new Schema(
+const clothingSchema = new Schema(
   {
     brand: { type: String, required: true },
     size: String,
@@ -43,7 +43,7 @@ const electronicSchema = new Schema(
   { collection: "clothes", timestamps: true }
 );
 
-const clothingSchema = new Schema(
+const electronicSchema = new Schema(
   {
     manufactor: { type: String, required: true },
     model: String,
@@ -55,5 +55,5 @@ const clothingSchema = new Schema(
 module.exports = {
   product: model(DOCUMENT_NAME, productSchema),
   clothing: model("clothes", clothingSchema),
-  product: model("electronics", electronicSchema),
+  electronic: model("electronics", electronicSchema),
 };
