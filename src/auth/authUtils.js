@@ -54,6 +54,7 @@ const authentication = asyncHandler(async (req, res, next) => {
 
   //2
   const keyStore = await findByUserId(userId);
+  console.log(keyStore);
   if (!keyStore) throw new NotFoundError("Not found Key Store");
 
   //3
