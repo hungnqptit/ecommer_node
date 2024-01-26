@@ -1,9 +1,9 @@
 "use strict";
 const { default: mongoose, mongo } = require("mongoose");
 const { countConnect } = require("../helpers/check.connect");
-const {
-  db: { host, port, name },
-} = require("../configs/config.mongodb");
+// const {
+//   db: { host, port, name },
+// } = require("../configs/config.mongodb");
 // connect string
 const connectString = `mongodb+srv://admin:admin@flutter08.qetyptd.mongodb.net/?retryWrites=true&w=majority`;
 class Database {
