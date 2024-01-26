@@ -5,7 +5,7 @@ const {
   db: { host, port, name },
 } = require("../configs/config.mongodb");
 // connect string
-const connectString = `mongodb://${host}:${port}/${name}`;
+const connectString = `mongodb+srv://admin:admin@flutter08.qetyptd.mongodb.net/?retryWrites=true&w=majority`;
 class Database {
   constructor() {
     this.connect();
